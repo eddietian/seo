@@ -174,7 +174,14 @@ function safe($data){ //å®??¨è?æ»¤å?½æ??
     $data = str_replace('£©', "", $data);
     $data = str_replace('(', "", $data);
     $data = str_replace(')', "", $data);
-
+    $data = str_replace(':', "", $data);
+    $data = str_replace('¡¾', "", $data);
+    $data = str_replace('¡¿', "", $data);
+    $data = str_replace('{', "", $data);
+    $data = str_replace('}', "", $data);
+    $data = str_replace('-', "", $data);
+    $data = str_replace('??', "", $data);
+    $data = str_replace('¡¢', "", $data);
     return $data;
 }
 
