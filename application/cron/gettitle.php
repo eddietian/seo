@@ -51,13 +51,26 @@ foreach ($titlelist as $title) {
 
     $insertymd = date("Ymd");
 
-    $i_sql = "insert into sitetitle(title, md5key, insertymd) values ('".$title."', '".$md5key."', {$insertymd})";
+    try {
+        $i_sql = "insert into sitetitle(title, md5key, insertymd) values ('" . $title . "', '" . $md5key . "', {$insertymd})";
+        $sitemodel->_db->exec($i_sql);
+    } catch(Exception $a){
 
-    $sitemodel->_db->exec($i_sql);
+    }
+
 }
 
-function safe($s){ //安全过滤函数
-    if(get_magic_quotes_gpc()){ $s=stripslashes($s); }
-    $s=mysql_real_escape_string($s);
-    return $s;
+function safe($data){ //安全过滤函数
+    $data = addslashes($data);
+    //把'_'过滤掉
+    $data = str_replace("_", "\_", $data);
+    //把'%'过滤掉
+    $data = str_replace("%", "\%", $data);
+    //把'*'过滤掉
+    $data = str_replace("*", "\*", $data);
+
+    $data = str_replace("'", "", $data);
+    $data = str_replace('"', "", $data);
+
+    return $data;
 }
