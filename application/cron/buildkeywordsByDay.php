@@ -17,12 +17,14 @@ header("Content-type: text/html; charset=gb2312");
 $yesterday = date("Ymd", strtotime("-1 day"));
 $sitemodel = new DBModel('default');
 
-$s_title_sql = "select title from sitetitle where insertymd={$yesterday}";
+$s_title_sql = "select id,title from sitetitle where insertymd>={$yesterday} and state = 0";
 
 $rs = $sitemodel->_db->query($s_title_sql)->fetchAll();
 
 $logarray = array();
-foreach ($rs as $v) {
+$titleids = array();
+foreach ($rs as $id => $v) {
+    $titleids[$id] = $id;
     $logarray[] = $v['title'];
 }
 
@@ -113,6 +115,12 @@ foreach ($logarray as $_k => $a) {
         }
     }
 
+}
+
+if ($titleids) {
+    $in_list = implode(",", $titleids);
+    $u_state_sql = "update sitetitle set state = 1 where id in ({$in_list})";
+    $sitemodel->_db->exec($u_state_sql);
 }
 
 
