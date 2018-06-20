@@ -4,7 +4,7 @@ set_time_limit(0);
  */
 date_default_timezone_set('PRC');
 $dir = dirname(__FILE__);
-//å…¨å±€é…ç½®æ–‡ä»¶ç›®å½•
+//?¨å???ç½???ä»¶ç??å½?
 define('APP_ROOT', realpath($dir . '/../../'));
 require_once(APP_ROOT.'/../bfw/Main.php');
 require_once(APP_ROOT."/application/config/config.inc.php");
@@ -24,12 +24,12 @@ $num_start = strpos($htmlinfo, $s_start);
 $num_end = strpos($htmlinfo, $s_end);
 
 if ($num_start === false) {
-    exit("æ— æ•°æ®");
+    exit("???°æ??");
 }
 
 $content = substr($htmlinfo, $num_start, $num_end - $num_start);
 
-$pattern = '/<a href="[^"]*"[^>]*>(.*)<\/a>/';    // è¿™æ˜¯åŒ¹é…çš„æ­£åˆ™è¡¨è¾¾å¼
+$pattern = '/<a href="[^"]*"[^>]*>(.*)<\/a>/';    // è¿????¹é????æ­£å??è¡¨è¾¾å¼?
 
 preg_match_all($pattern, $content, $matches);
 
@@ -60,17 +60,32 @@ foreach ($titlelist as $title) {
 
 }
 
-function safe($data){ //å®‰å…¨è¿‡æ»¤å‡½æ•°
+function safe($data){ //å®??¨è?æ»¤å?½æ??
     $data = addslashes($data);
-    //æŠŠ'_'è¿‡æ»¤æ‰
+    //??'_'è¿?æ»¤æ??
     $data = str_replace("_", "\_", $data);
-    //æŠŠ'%'è¿‡æ»¤æ‰
+    //??'%'è¿?æ»¤æ??
     $data = str_replace("%", "\%", $data);
-    //æŠŠ'*'è¿‡æ»¤æ‰
+    //??'*'è¿?æ»¤æ??
     $data = str_replace("*", "\*", $data);
 
     $data = str_replace("'", "", $data);
     $data = str_replace('"', "", $data);
+
+    $data = str_replace('£¡', "", $data);
+    $data = str_replace('£º', "", $data);
+    $data = str_replace('£¿', "", $data);
+    $data = str_replace('£¬', "", $data);
+    $data = str_replace('¡£', "", $data);
+    $data = str_replace('¡°', "", $data);
+    $data = str_replace('¡±', "", $data);
+
+    $data = str_replace('¡®', "", $data);
+    $data = str_replace('¡¯', "", $data);
+    $data = str_replace('£¨', "", $data);
+    $data = str_replace('£©', "", $data);
+    $data = str_replace('(', "", $data);
+    $data = str_replace(')', "", $data);
 
     return $data;
 }

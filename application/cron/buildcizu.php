@@ -17,7 +17,7 @@ header("Content-type: text/html; charset=gb2312");
 $yesterday = date("Ymd", strtotime("-1 day"));
 $sitemodel = new DBModel('default');
 
-$s_title_sql = "select id,title from sitetitle where insertymd>={$yesterday} and state = 0";
+$s_title_sql = "select id,title from sitetitle where insertymd>={$yesterday} and state = 1";
 
 $rs = $sitemodel->_db->query($s_title_sql)->fetchAll();
 
@@ -33,7 +33,10 @@ foreach ($rs as $id => $v) {
 
 foreach ($logarray as $_k => $a) {
     $a = trim($a);
+
     $a = safe($a);
+
+    echo $a;
     if (empty($a)) {
         continue;
     }
@@ -78,61 +81,22 @@ foreach ($logarray as $_k => $a) {
             }
         }
 
-        $rs = checkword($word, $sitemodel);
-        if (empty($rs)) {
-            try {
-                $i_sql = "insert into sitewords(words, score) values ('".$word."', 0)";
-                $sitemodel->_db->exec($i_sql);
-            }catch (Exception $e){
 
-            };
+        //$rs = checkword($word, $sitemodel);
 
-        } else {
-
-            $gbklen = mb_strlen($word, "gbk");
-            $len = mb_strlen($word);
-            $len = $gbklen<$len ? $gbklen:$len;
-
-            //ä¸?ä¸?å­?å°±ä?è®¡å??äº?
-            if ($len <= 1) {
-                continue;
-            } else {
-
-                if ($word != $rs['words']) {
-                    continue;
-                }
-
-                $score = 0.001;
-
-                if ($len >3) {
-                    $score = bcadd(0.001, $len/1000);
-                }
-                if ($rs['score'] < 10) {
-                    $u_score_sql = "update sitewords set score = score + {$score} where id={$rs['id']}";
-                    $sitemodel->_db->exec($u_score_sql);
-                }
-            }
-        }
     }
 
-}
+    print_r($wordlist);
 
-if ($titleids) {
-    $in_list = implode(",", $titleids);
-    $u_state_sql = "update sitetitle set state = 1 where id in ({$in_list})";
-    $sitemodel->_db->exec($u_state_sql);
 }
-
 
 function buildwordlist($arr) {
     $wordlist = array();
     foreach ($arr as $key => $v) {
-        if (json_encode($v) == 'null') {
-            unset($arr[$key]);
-        }
-        $str = join("", $arr);
-        for ($i = 1; $i<=count($arr); $i++) {
-            $wordlist[] = mb_substr($str, 0, $i);
+        $tmp = "";
+        foreach ($arr as $kk => $vv) {
+            $tmp.=$vv;
+            $wordlist[] = $tmp;
         }
         unset($arr[$key]);
     }
@@ -141,28 +105,30 @@ function buildwordlist($arr) {
 
 function mbStrSplit ($string, $len=1) {
     $start = 0;
+    $string = trim($string);
     $strlen = mb_strlen($string);
     while ($strlen) {
-        $b = mb_substr($string,$start,$len, "gb2312");
-        $b = trim($b);
 
+        $b = mb_substr($string,$start,$len, "gb2312");
+        //$b = mb_convert_encoding($b, "gb2312", "auto");
+        $b = trim($b);
 
         if (json_encode($b) == 'null' || $b == "?") {
             //??æ¼?ç½???ä¸???
             if (preg_match("/[\x7f-\xff]/", $b)) {
 
             } else {
-                $string = str_replace($b, "", $string);
+                $string= str_replace($b, "", $string);
                 $strlen = mb_strlen($string);
                 continue;
             }
-
         }
 
         $array[] = $b;
         $string = mb_substr($string, $len, $strlen, "gb2312");
         $strlen = mb_strlen($string);
     }
+
     return $array;
 }
 
