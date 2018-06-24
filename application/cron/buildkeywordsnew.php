@@ -13,19 +13,17 @@ Main::init();
 
 header("Content-type: text/html; charset=gb2312");
 
-
-$yesterday = date("Ymd", strtotime("-1 day"));
 $sitemodel = new DBModel('default');
 
-$s_title_sql = "select id,title from sitetitle where insertymd>={$yesterday} and state = 0";
-
-$rs = $sitemodel->_db->query($s_title_sql)->fetchAll();
+$file = __DIR__."/ok.txt";
 
 $logarray = array();
-$titleids = array();
-foreach ($rs as $id => $v) {
-    $titleids[$id] = $id;
-    $logarray[] = $v['title'];
+$fp = fopen($file, 'r'); //文件
+while (!feof($fp)) {
+    //for($j=1;$j<=1000;$j++) {     //读取下面的1000行并存储到数组中
+    $logarray[] = stream_get_line($fp, 65535, "\n");
+    // break;
+    // }
 }
 
 //$u_score_sql = "update sitewords set score = score - 0.001 where score > 0";
@@ -115,12 +113,6 @@ foreach ($logarray as $_k => $a) {
         }
     }
 
-}
-
-if ($titleids) {
-    $in_list = implode(",", $titleids);
-    $u_state_sql = "update sitetitle set state = 1 where id in ({$in_list})";
-    $sitemodel->_db->exec($u_state_sql);
 }
 
 

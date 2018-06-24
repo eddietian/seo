@@ -3,66 +3,118 @@
  */
 date_default_timezone_set('PRC');
 $dir = dirname(__FILE__);
-//å…¨å±€é…ç½®æ–‡ä»¶ç›®å½•
+
 define('APP_ROOT', realpath($dir . '/../../'));
 require_once(APP_ROOT.'/../bfw/Main.php');
 require_once(APP_ROOT."/application/config/config.inc.php");
 Main::setConfig($appConfig);
 Main::init();
 
+header("Content-type: text/html; charset=gb2312");
 
-$model = new DBModel('default');
-
-//100ä¸ª
-for ($i = 0;$i<10;$i++) {
-    $num = mt_rand(3,9);
-    $list = generateCode(10, "", $num);
-    foreach ($list as $hostname) {
-        $sql = "select * from sitelist where hostname='{$hostname}'";
-        $hostinfo = $model->_db->query($sql)->fetch();
-        if ($hostinfo) {
-            continue;
-        }
-
-        $upsql = "insert into sitelist (hostname,)";
-        $model->_db->exec($sql);
+$sitemodel = new DBModel('default');
 
 
-    }
+$yesterday = date("Ymd", strtotime("-1 day"));
+$sitemodel = new DBModel('default');
+
+//Ñ¡Ôñ¹Ø¼ü×Ö  ºÍ ÓòÃû
+$host = "dejson.com";
+$s_title_sql = "select id,title from sitetitle where insertymd>={$yesterday} and state = 1";
+$s_title_sql = "select id,title from sitetitle  where id=362  limit 100";
+
+$rs = $sitemodel->_db->query($s_title_sql)->fetchAll();
+
+$logarray = array();
+$titleids = array();
+foreach ($rs as $id => $v) {
+    $titleids[$id] = $id;
+    $logarray[] = $v['title'];
 }
 
 
-/**
- * ç”Ÿæˆvipæ¿€æ´»ç 
- * @param int $nums             ç”Ÿæˆå¤šå°‘ä¸ªä¼˜æƒ ç 
- * @param array $exist_array     æ’é™¤æŒ‡å®šæ•°ç»„ä¸­çš„ä¼˜æƒ ç 
- * @param int $code_length         ç”Ÿæˆä¼˜æƒ ç çš„é•¿åº¦
- * @param int $prefix              ç”ŸæˆæŒ‡å®šå‰ç¼€
- * @return array                 è¿”å›ä¼˜æƒ ç æ•°ç»„
- */
+/*$key = 'ÀïÔ¼°ÂÔËÓĞÄÄĞ©¹ÊÊÂÄØ';
+
+$words_array = parse($key);
+
+print_r($words_array);
+exit;
+*/
+$so =  scws_new();
+$so->set_charset('gbk');
+
+$data = array();
+foreach ($logarray as $title) {
+    $so->send_text($title);
+
+    $czlist = $so->get_result();
+    print_r($czlist);exit;
+    $cizulist = WordService::buildcizu($czlist);
+
+    if (!empty($cizulist)) {
+        $strarr = array();
+        foreach ($cizulist as $cizu) {
+            $strarr[] = join("", $cizu);
+        }
+
+        $strarr = array_slice($strarr,0 ,4);
+
+        $tmp = array(
+            'title' => safe($title),
+            'keywords' => join(" ", $strarr)
+        );
+        $data[] = $tmp;
+    }
+}
+
+if (empty($data)) {
+    exit("Ã»ÓĞÉú³É´Ê×é£¡");
+}
+
+$list = generateCode(count($data)+50, "");
+
+foreach ($data as $id => $info) {
+    $hostname = $list[$id].".".$host;
+
+    $sql = "select * from sitelist where hostname='{$hostname}'";
+    $hostinfo = $sitemodel->_db->query($sql)->fetch();
+    if ($hostinfo) {
+        continue;
+    }
+
+
+    $time = time();
+    $insertymd = date("Ymd");
+    $upsql = "insert into sitelist (hostname,host, title, keywords, inserttime, insertymd) values ('".$hostname."','".$host."', '{$info['title']}', '{$info['keywords']}', {$time}, {$insertymd})";
+    $sitemodel->_db->exec($upsql);
+}
+
+echo "done:".count($data);
+
 function generateCode( $nums, $exist_array='', $code_length = 6, $prefix = '' ) {
 
+
     $characters = "0123456789abcdefghijklmnpqrstuvwxyz";
-    $promotion_codes = array();//è¿™ä¸ªæ•°ç»„ç”¨æ¥æ¥æ”¶ç”Ÿæˆçš„ä¼˜æƒ ç 
+    $promotion_codes = array();
 
     for($j = 0 ; $j < $nums; $j++) {
 
         $code = '';
 
+        $code_length =  mt_rand(4,9);
         for ($i = 0; $i < $code_length; $i++) {
 
             $code .= $characters[mt_rand(0, strlen($characters)-1)];
 
         }
 
-        //å¦‚æœç”Ÿæˆçš„4ä½éšæœºæ•°ä¸å†æˆ‘ä»¬å®šä¹‰çš„$promotion_codesæ•°ç»„é‡Œé¢
         if( !in_array($code,$promotion_codes) ) {
 
             if( is_array($exist_array) ) {
 
-                if( !in_array($code,$exist_array) ) {//æ’é™¤å·²ç»ä½¿ç”¨çš„ä¼˜æƒ ç 
+                if( !in_array($code,$exist_array) ) {
 
-                    $promotion_codes[$j] = $prefix.$code; //å°†ç”Ÿæˆçš„æ–°ä¼˜æƒ ç èµ‹å€¼ç»™promotion_codesæ•°ç»„
+                    $promotion_codes[$j] = $prefix.$code;
 
                 } else {
 
@@ -72,7 +124,7 @@ function generateCode( $nums, $exist_array='', $code_length = 6, $prefix = '' ) 
 
             } else {
 
-                $promotion_codes[$j] = $prefix.$code;//å°†ä¼˜æƒ ç èµ‹å€¼ç»™æ•°ç»„
+                $promotion_codes[$j] = $prefix.$code;
 
             }
 
@@ -85,7 +137,72 @@ function generateCode( $nums, $exist_array='', $code_length = 6, $prefix = '' ) 
 }
 
 
+function safe($data){ //å®??¨è?æ»¤å?½æ??
+    $data = addslashes($data);
+    //??'_'è¿?æ»¤æ??
+    $data = str_replace("_", "\_", $data);
+    //??'%'è¿?æ»¤æ??
+    $data = str_replace("%", "\%", $data);
+    //??'*'è¿?æ»¤æ??
+    $data = str_replace("*", "\*", $data);
+
+    $data = str_replace("'", "", $data);
+    $data = str_replace('"', "", $data);
+
+    $data = str_replace('£¡', "", $data);
+    $data = str_replace('£º', "", $data);
+    $data = str_replace('£¿', "", $data);
+    $data = str_replace('£¬', "", $data);
+    $data = str_replace('¡£', "", $data);
+    $data = str_replace('¡°', "", $data);
+    $data = str_replace('¡±', "", $data);
+
+    $data = str_replace('¡®', "", $data);
+    $data = str_replace('¡¯', "", $data);
+    $data = str_replace('£¨', "", $data);
+    $data = str_replace('£©', "", $data);
+    $data = str_replace('(', "", $data);
+    $data = str_replace(')', "", $data);
+    $data = str_replace(':', "", $data);
+    $data = str_replace('¡¾', "", $data);
+    $data = str_replace('¡¿', "", $data);
+    $data = str_replace('{', "", $data);
+    $data = str_replace('}', "", $data);
+    $data = str_replace('-', "", $data);
+    $data = str_replace('??', "", $data);
+    $data = str_replace('¡¢', "", $data);
+    $data = str_replace('¡¶', "", $data);
+    $data = str_replace('¡·', "", $data);
+    $data = str_replace('<', "", $data);
+    $data = str_replace('>', "", $data);
+    return $data;
+}
 
 
+function parse($str)
+{
+    $cws =  scws_new();
+    $dictPath = ini_get('scws.default.fpath').'/dict.xdb';
+    $cws->set_dict($dictPath);
+
+    //×Ô¶¨Òå·Ö´Ê¿â
+    $myDictPath = ini_get('scws.default.fpath').'/mydict.xdb';
+    if(file_exists($myDictPath))
+    {
+        $cws->add_dict($myDictPath);
+    }
+    $cws->set_ignore(true);
+
+    $utf8Str = iconv("UTF-8","GB2312//IGNORE",$str);
+    $cws->send_text($utf8Str);
+    $resArr = array();
+    while($tmp = $cws->get_result())
+    {
+        $resArr[] = $tmp;
+    }
+    $cws->close();
+
+    return $resArr;
+}
 
 
